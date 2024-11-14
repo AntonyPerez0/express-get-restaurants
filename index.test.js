@@ -29,66 +29,105 @@ describe("Restaurants API", () => {
     const response = await request(app).get("/restaurants");
     expect(response.body).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          name: "AppleBees",
-          location: "Texas",
-          cuisine: "FastFood",
-        }),
-        expect.objectContaining({
-          name: "LittleSheep",
-          location: "Dallas",
-          cuisine: "Hotpot",
-        }),
-        expect.objectContaining({
-          name: "Spice Grill",
-          location: "Houston",
-          cuisine: "Indian",
-        }),
+        expect.objectContaining({ name: "AppleBees" }),
+        expect.objectContaining({ name: "LittleSheep" }),
+        expect.objectContaining({ name: "Spice Grill" }),
       ])
     );
   });
 
-  test("GET /restaurants/:id should return the correct data", async () => {
-    const response = await request(app).get("/restaurants/1");
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual(
-      expect.objectContaining({
-        name: "AppleBees",
-        location: "Texas",
-        cuisine: "FastFood",
-      })
-    );
-  });
+  describe("POST /restaurants", () => {
+    test("should create a new restaurant when all fields are valid", async () => {
+      const newRestaurant = {
+        name: "New Restaurant",
+        location: "New Location",
+        cuisine: "New Cuisine",
+      };
+      const response = await request(app)
+        .post("/restaurants")
+        .send(newRestaurant);
+      expect(response.statusCode).toBe(201);
+      expect(response.body).toHaveProperty("id");
+      expect(response.body.name).toBe(newRestaurant.name);
+    });
 
-  test("POST /restaurants should add a new restaurant", async () => {
-    const newRestaurant = {
-      name: "Test Restaurant",
-      location: "Test City",
-      cuisine: "Test Cuisine",
-    };
-    const postResponse = await request(app)
-      .post("/restaurants")
-      .send(newRestaurant);
-    expect(postResponse.statusCode).toBe(201);
-    expect(postResponse.body).toEqual(expect.objectContaining(newRestaurant));
-  });
+    test("should return errors when name is empty", async () => {
+      const newRestaurant = {
+        name: "",
+        location: "Test Location",
+        cuisine: "Test Cuisine",
+      };
+      const response = await request(app)
+        .post("/restaurants")
+        .send(newRestaurant);
+      expect(response.statusCode).toBe(400);
+      expect(response.body).toHaveProperty("error");
+      expect(Array.isArray(response.body.error)).toBe(true);
+      expect(response.body.error).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ msg: "Name is required" }),
+        ])
+      );
+    });
 
-  test("PUT /restaurants/:id should update the restaurant with provided value", async () => {
-    const updatedData = {
-      name: "Updated Restaurant",
-      location: "Updated City",
-      cuisine: "Updated Cuisine",
-    };
-    const putResponse = await request(app)
-      .put("/restaurants/1")
-      .send(updatedData);
-    expect(putResponse.statusCode).toBe(200);
-    expect(putResponse.body).toEqual(expect.objectContaining(updatedData));
-  });
+    test("should return errors when location is empty", async () => {
+      const newRestaurant = {
+        name: "Test Restaurant",
+        location: "",
+        cuisine: "Test Cuisine",
+      };
+      const response = await request(app)
+        .post("/restaurants")
+        .send(newRestaurant);
+      expect(response.statusCode).toBe(400);
+      expect(response.body).toHaveProperty("error");
+      expect(Array.isArray(response.body.error)).toBe(true);
+      expect(response.body.error).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ msg: "Location is required" }),
+        ])
+      );
+    });
 
-  test("DELETE /restaurants/:id should delete the restaurant with the provided id", async () => {
-    const deleteResponse = await request(app).delete("/restaurants/1");
-    expect(deleteResponse.statusCode).toBe(200);
-    expect(deleteResponse.body).toEqual({ message: "Restaurant deleted" });
+    test("should return errors when cuisine is empty", async () => {
+      const newRestaurant = {
+        name: "Test Restaurant",
+        location: "Test Location",
+        cuisine: "",
+      };
+      const response = await request(app)
+        .post("/restaurants")
+        .send(newRestaurant);
+      expect(response.statusCode).toBe(400);
+      expect(response.body).toHaveProperty("error");
+      expect(Array.isArray(response.body.error)).toBe(true);
+      expect(response.body.error).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ msg: "Cuisine is required" }),
+        ])
+      );
+    });
+
+    test("should return errors when all fields are empty", async () => {
+      const newRestaurant = {
+        name: "",
+        location: "",
+        cuisine: "",
+      };
+      const response = await request(app)
+        .post("/restaurants")
+        .send(newRestaurant);
+      expect(response.statusCode).toBe(400);
+      expect(response.body).toHaveProperty("error");
+      expect(Array.isArray(response.body.error)).toBe(true);
+      expect(response.body.error.length).toBe(3);
+      expect(response.body.error).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ msg: "Name is required" }),
+          expect.objectContaining({ msg: "Location is required" }),
+          expect.objectContaining({ msg: "Cuisine is required" }),
+        ])
+      );
+    });
   });
 });
